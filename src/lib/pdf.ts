@@ -35,7 +35,8 @@ export async function downloadPdfFromHtml(url: string, filename: string) {
   const content = iframeDoc.body;
 
   try {
-    await html2pdf()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (html2pdf() as any)
       .set({
         margin: [10, 10, 10, 10],
         filename,
