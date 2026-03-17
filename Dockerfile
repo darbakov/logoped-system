@@ -32,6 +32,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
+COPY --from=builder /app/node_modules/fsevents ./node_modules/fsevents
 
 RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 
@@ -41,4 +42,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_URL="file:/app/data/logopro.db"
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
