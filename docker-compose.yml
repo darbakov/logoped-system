@@ -7,6 +7,7 @@ services:
       - DATABASE_URL=file:/app/data/logopro.db
       - AUTH_SECRET=${AUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - AUTH_TRUST_HOST=true
     volumes:
       - app-data:/app/data
     restart: unless-stopped
