@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clients Client[]
+}
+
+model Client {
+  userId       Int?
+  id           Int       @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  patronymic   String
+  birthDate    DateTime
+  parentName   String
+  parentPhone  String
+  parentEmail  String?
+  diagnosis    String
+  // source: PRIVATE | INSTITUTION
+  source       String
+  // status: ACTIVE | COMPLETED | ARCHIVED
+  status       String
+  sessionPrice Int?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user          User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessions      Session[]
+  speechCards   SpeechCard[]
+  soundProgress SoundProgress[]
+  homework      Homework[]
+  payments      Payment[]
+}
+
+model Session {
+  id               Int       @id @default(autoincrement())
+  clientId         Int
+  date             DateTime
+  startTime        String
+  duration         Int       @default(30)
+  type             String
+  // status: PLANNED | COMPLETED | CANCELLED | MISSED
+  status           String
+  notes            String?
+  isRecurring      Boolean   @default(false)
+  recurringGroupId String?
+  // isPaid: whether this session has been paid for
+  isPaid           Boolean   @default(false)
+  price            Int?
+  createdAt        DateTime  @default(now())
+
+  client    Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  exercises SessionExercise[]
+  homework  Homework[]
+}
+
+model SpeechCard {
+  id                Int      @id @default(autoincrement())
+  clientId          Int
+  date              DateTime
+  soundPronunciation String  @default("{}")
+  phonematicHearing  String  @default("")
+  syllableStructure  String  @default("")
+  vocabulary         String  @default("")
+  grammar            String  @default("")
+  coherentSpeech     String  @default("")
+  conclusion         String  @default("")
+  createdAt          DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id        Int        @id @default(autoincrement())
+  name      String
+  parentId  Int?
+
+  parent   Category?  @relation("CategoryToCategory", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryToCategory")
+  exercises Exercise[]
+}
+
+model Exercise {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  categoryId  Int
+  minAge      Int      @default(3)
+  maxAge      Int      @default(7)
+  targetSounds String  @default("")
+  createdAt   DateTime @default(now())
+
+  category Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  sessions SessionExercise[]
+}
+
+model SessionExercise {
+  sessionId  Int
+  exerciseId  Int
+  notes      String?
+
+  session  Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, exerciseId])
+}
+
+model SoundProgress {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  sound     String
+  // stage: NOT_STARTED | IN_PROGRESS | ISOLATED | SYLLABLES | WORDS | PHRASES | SPEECH
+  stage     String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, sound])
+}
+
+model Homework {
+  id          Int      @id @default(autoincrement())
+  clientId    Int
+  sessionId   Int?
+  date        DateTime @default(now())
+  // status: ASSIGNED | COMPLETED | PARTIAL
+  status      String   @default("ASSIGNED")
+  description String   @default("")
+  exercises   String   @default("[]")
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  amount    Int
+  date      DateTime @default(now())
+  // method: CASH | CARD | TRANSFER
+  method    String   @default("CASH")
+  notes     String?
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
